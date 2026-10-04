@@ -37,20 +37,29 @@ A full-stack web café management system that combines the joy of coffee with th
 ## 📁 Project Structure
 
 ```
-margins-mugs/
+margins-and-mugs/
 ├── backend/
-│   ├── main.py          # FastAPI app and routes
-│   ├── database.py      # SQLite connection
-│   ├── seed.py          # Loads menu and books into the DB
-│   ├── ai.py            # LLM helper functions
-│   ├── requirements.txt
-│   └── .env             # API key (not committed)
+│   ├── main.py            # Flask app and API routes
+│   ├── database.py        # SQLite connection helpers
+│   ├── schema.sql         # Database table definitions
+│   ├── seed.py            # Loads the menu into the database
+│   ├── ai.py              # Connects API endpoints to the ML modules
+│   ├── ml/
+│   │   ├── forecast.py    # Demand forecasting
+│   │   ├── recommender.py # Item recommendations
+│   │   └── sentiment.py   # Review sentiment classifier
+│   └── models/            # Saved trained models (.joblib)
 ├── frontend/
-│   ├── index.html       # Login
-│   ├── html/            # about.html, bill.html, books.html, menu.html
-│   ├── css/style.css
-│   ├── js/              # menu.js, books.js, bill.js, chat.js, common.js
-│   └── images/
+│   ├── index.html         # Landing page and best sellers
+│   ├── html/              # Menu, cart/bill, admin, books, about pages
+│   ├── css/style.css      # Styling
+│   └── js/                # Page scripts and API helper
+├── data/                  # Dataset generator and generated orders
+├── notebooks/             # EDA and model experiments
+├── tests/                 # Automated tests
+├── docs/                  # Screenshots, architecture diagram, demo GIF
+├── legacy_tkinter/        # Original Tkinter version
+├── requirements.txt
 └── README.md
 ```
 
