@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About | Margins &amp; Mugs</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body data-page="about">
+    <div class="layout">
+        <aside class="sidebar"><a class="brand" href="index.html">MARGINS<br>&amp; MUGS</a>
+            <nav class="navigation" aria-label="Main navigation">
+                <a class="nav-link" href="items.html">Menu</a><a class="nav-link" href="books.html">Books</a>
+                <a class="nav-link" href="orders.html">Your Order <span class="cart-count"></span></a>
+                <a class="nav-link active" href="about.html">About</a><a class="nav-link" href="index.html#exit"
+                    data-exit>Exit</a>
+            </nav>
+            <p class="sidebar-welcome"></p>
+        </aside>
+        <main class="main-content">
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">OUR LITTLE CORNER</p>
+                    <h1>About Margins &amp; Mugs</h1>
+                </div>
+            </header>
+            <article class="about-card">
+                <p>Margins &amp; Mugs brings a cafe and a bookshop together. Browse the menu, look through the books,
+                    add food and drinks to your cart, and review a clear bill.</p>
+                <h2>Key features</h2>
+                <ul>
+                    <li>Interactive menu and book catalogue</li>
+                    <li>Quantity-based ordering</li>
+                    <li>Automatic bill calculation</li>
+                    <li>Customer greeting and experience rating</li>
+                </ul>
+
+            </article>
+            <section class="rating-card" id="rating">
+                <h2>How was your visit?</h2>
+                <p class="muted">Choose a star rating to share your experience.</p>
+                <div class="rating-stars" role="group" aria-label="Choose a star rating">
+                    <button class="star" type="button" aria-label="1 star" data-rating="1">☆</button><button
+                        class="star" type="button" aria-label="2 stars" data-rating="2">☆</button><button class="star"
+                        type="button" aria-label="3 stars" data-rating="3">☆</button><button class="star" type="button"
+                        aria-label="4 stars" data-rating="4">☆</button><button class="star" type="button"
+                        aria-label="5 stars" data-rating="5">☆</button>
+                </div>
+                <p class="form-message" id="rating-message" aria-live="polite"></p><button class="button button-primary"
+                    id="submit-rating" type="button">Submit rating</button>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
