@@ -42,7 +42,7 @@ function saveCart(cart) { localStorage.setItem(CART_KEY, JSON.stringify(cart)); 
 
 function createCard(name, filename, price = null) {
     const card = document.createElement("article");
-    card.className = "card";
+    card.className = price === null ? "card book-card" : "card menu-card";
     const imageBox = document.createElement("div");
     imageBox.className = "card-image";
     const image = document.createElement("img");
