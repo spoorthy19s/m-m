@@ -301,6 +301,38 @@ a {
     color: #a9d5ad;
 }
 
+.about-card {
+    border-left: 5px solid var(--green);
+    background: linear-gradient(135deg, #1b2a20, var(--panel));
+}
+
+.rating-card {
+    scroll-margin-top: 24px;
+    text-align: center;
+    background: linear-gradient(145deg, #263627, var(--panel));
+}
+
+.rating-card .rating-stars {
+    justify-content: center;
+}
+
+.rating-card .button {
+    min-width: 180px;
+}
+
+.page-header+#books-content {
+    padding-bottom: 32px;
+}
+
+body[data-page="books"] .category {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+body[data-page="about"] .main-content {
+    max-width: 1240px;
+}
+
 .rating-stars {
     display: flex;
     gap: 8px;
