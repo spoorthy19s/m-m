@@ -1,6 +1,6 @@
 "use strict";
 
-// Cafe menu and book catalogue. Put matching image files in ./assets/.
+// Shared site data. Place the image files in ../images/ from the HTML pages.
 const MENU_ITEMS = [
     ["Hot Beverages", "ESPRESSO", 90, "esp.jpg"], ["Hot Beverages", "MASALA TEA", 40, "tea.jpg"],
     ["Hot Beverages", "AMERICANO", 120, "americano.jpg"], ["Hot Beverages", "CAPPUCCINO", 150, "cappuccino.jpg"],
@@ -14,7 +14,6 @@ const MENU_ITEMS = [
     ["Snacks & Spicy Items", "CHEESE CORN TOAST", 90, "85.jpg"], ["Snacks & Spicy Items", "PASTA", 140, "86.jpg"],
     ["Snacks & Spicy Items", "VEG MOMOS", 110, "87.jpg"]
 ];
-
 const BOOKS = [
     ["General Fiction", "A SHIMLA AFFAIR", "11.jpg"], ["General Fiction", "MARROW", "16.jpg"],
     ["General Fiction", "BUTCHER & BLACKBIRD", "17.jpeg"], ["General Fiction", "KING OF ENVY", "13.jpg"],
@@ -31,23 +30,23 @@ const BOOKS = [
 
 const CART_KEY = "margins-and-mugs-cart";
 const CUSTOMER_KEY = "margins-and-mugs-customer";
+const ROOT = document.body.dataset.root || "";
 const money = amount => `₹${amount}`;
 const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-function readCart() {
+function getCart() {
     try { return JSON.parse(localStorage.getItem(CART_KEY) || "{}"); }
     catch { return {}; }
 }
-
 function saveCart(cart) { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
 
-function makeCard(name, filename, price = null) {
+function createCard(name, filename, price = null) {
     const card = document.createElement("article");
     card.className = "card";
     const imageBox = document.createElement("div");
     imageBox.className = "card-image";
     const image = document.createElement("img");
-    image.src = `assets/${filename}`;
+    image.src = `${ROOT}images/${filename}`;
     image.alt = name;
     image.loading = "lazy";
     image.onerror = () => { imageBox.textContent = "Image not found"; };
@@ -62,67 +61,63 @@ function makeCard(name, filename, price = null) {
         priceLabel.textContent = money(price);
         const controls = document.createElement("div");
         controls.className = "quantity";
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.textContent = "−";
-        remove.setAttribute("aria-label", `Remove one ${name}`);
-        const count = document.createElement("output");
-        count.id = `qty-${slug(name)}`;
-        count.textContent = readCart()[name]?.qty || 0;
-        const add = document.createElement("button");
-        add.type = "button";
-        add.textContent = "+";
-        add.setAttribute("aria-label", `Add one ${name}`);
-        remove.addEventListener("click", () => changeQuantity(name, price, -1));
-        add.addEventListener("click", () => changeQuantity(name, price, 1));
-        controls.append(remove, count, add);
+        const minus = document.createElement("button");
+        minus.type = "button"; minus.textContent = "−";
+        minus.setAttribute("aria-label", `Remove one ${name}`);
+        const quantity = document.createElement("output");
+        quantity.id = `qty-${slug(name)}`;
+        quantity.textContent = getCart()[name]?.qty || 0;
+        const plus = document.createElement("button");
+        plus.type = "button"; plus.textContent = "+";
+        plus.setAttribute("aria-label", `Add one ${name}`);
+        minus.addEventListener("click", () => changeQuantity(name, price, -1));
+        plus.addEventListener("click", () => changeQuantity(name, price, 1));
+        controls.append(minus, quantity, plus);
         card.append(priceLabel, controls);
     }
     return card;
 }
 
-function renderCatalogue(containerId, data, categories, isMenu) {
-    const root = document.getElementById(containerId);
-    if (!root) return;
+function renderCatalogue(targetId, data, categories, menu = false) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
     categories.forEach(category => {
         const heading = document.createElement("h2");
         heading.className = "category";
         heading.textContent = category;
         const cards = document.createElement("div");
         cards.className = "cards";
-        data.filter(item => item[0] === category).forEach(item => {
-            cards.append(makeCard(item[1], isMenu ? item[3] : item[2], isMenu ? item[2] : null));
+        data.filter(row => row[0] === category).forEach(row => {
+            cards.append(createCard(row[1], menu ? row[3] : row[2], menu ? row[2] : null));
         });
-        root.append(heading, cards);
+        target.append(heading, cards);
     });
 }
 
-function changeQuantity(name, price, change) {
-    const cart = readCart();
-    const quantity = Math.max(0, (cart[name]?.qty || 0) + change);
+function changeQuantity(name, price, difference) {
+    const cart = getCart();
+    const quantity = Math.max(0, (cart[name]?.qty || 0) + difference);
     if (quantity) cart[name] = { price, qty: quantity };
     else delete cart[name];
     saveCart(cart);
-    const count = document.getElementById(`qty-${slug(name)}`);
-    if (count) count.textContent = quantity;
-    renderOrder();
+    const output = document.getElementById(`qty-${slug(name)}`);
+    if (output) output.textContent = quantity;
+    renderBill();
     updateCartCount();
 }
+
 function updateCartCount() {
-    const cart = readCart();
-    const count = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
-    document.querySelectorAll(".cart-count").forEach(element => {
-        element.textContent = count ? `(${count})` : "";
-    });
+    const count = Object.values(getCart()).reduce((sum, item) => sum + item.qty, 0);
+    document.querySelectorAll(".cart-count").forEach(node => { node.textContent = count ? `(${count})` : ""; });
 }
 
-function renderOrder() {
+function renderBill() {
     const target = document.getElementById("order-content");
     if (!target) return;
     target.replaceChildren();
-    const cart = readCart();
-    const names = Object.keys(cart);
-    if (!names.length) {
+    const cart = getCart();
+    const entries = Object.entries(cart);
+    if (!entries.length) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
         empty.textContent = "Your cart is empty. Browse the menu to add something!";
@@ -132,16 +127,15 @@ function renderOrder() {
     const bill = document.createElement("div");
     bill.className = "bill";
     let total = 0;
-    names.forEach(name => {
-        const item = cart[name];
-        const amount = item.price * item.qty;
-        total += amount;
+    entries.forEach(([name, item]) => {
+        const subtotal = item.price * item.qty;
+        total += subtotal;
         const row = document.createElement("div");
         row.className = "bill-row";
-        const title = document.createElement("span"); title.textContent = name;
+        const label = document.createElement("span"); label.textContent = name;
         const quantity = document.createElement("span"); quantity.textContent = `× ${item.qty}`;
-        const subtotal = document.createElement("strong"); subtotal.textContent = money(amount);
-        row.append(title, quantity, subtotal);
+        const amount = document.createElement("strong"); amount.textContent = money(subtotal);
+        row.append(label, quantity, amount);
         bill.append(row);
     });
     const totalLabel = document.createElement("p");
@@ -154,7 +148,7 @@ function renderOrder() {
         const customer = localStorage.getItem(CUSTOMER_KEY) || "there";
         window.alert(`Thank you, ${customer}! Your order for ${money(total)} has been placed.`);
         localStorage.removeItem(CART_KEY);
-        renderOrder();
+        renderBill();
         updateCartCount();
     });
     target.append(bill, totalLabel, placeOrder);
@@ -171,7 +165,7 @@ function initializeLogin() {
         if (!name) { message.textContent = "Please enter your name."; return; }
         if (!/^\d{7,15}$/.test(phone)) { message.textContent = "Enter a phone number with 7 to 15 digits."; return; }
         localStorage.setItem(CUSTOMER_KEY, name);
-        window.location.href = "items.html";
+        window.location.href = `${ROOT}html/menu.html`;
     });
 }
 
@@ -193,21 +187,20 @@ function initializeRating() {
 function initializeExitLinks() {
     document.querySelectorAll("[data-exit]").forEach(link => link.addEventListener("click", event => {
         event.preventDefault();
-        window.location.href = "about.html#rating";
+        window.location.href = `${ROOT}html/about.html#rating`;
     }));
-    if (window.location.hash === "#exit") window.location.href = "about.html#rating";
+    if (window.location.hash === "#exit") window.location.href = `${ROOT}html/about.html#rating`;
 }
 
 function initializePage() {
     const customer = localStorage.getItem(CUSTOMER_KEY);
-    document.querySelectorAll(".sidebar-welcome").forEach(element => {
-        element.textContent = customer ? `Welcome, ${customer}` : "Welcome to the cafe";
+    document.querySelectorAll(".sidebar-welcome").forEach(node => {
+        node.textContent = customer ? `Welcome, ${customer}` : "Welcome to the cafe";
     });
     renderCatalogue("items-content", MENU_ITEMS,
         ["Hot Beverages", "Desserts & Bakes", "Snacks & Spicy Items"], true);
-    renderCatalogue("books-content", BOOKS,
-        ["General Fiction", "Non-Fiction", "Thrillers"], false);
-    renderOrder();
+    renderCatalogue("books-content", BOOKS, ["General Fiction", "Non-Fiction", "Thrillers"]);
+    renderBill();
     updateCartCount();
     initializeLogin();
     initializeRating();
