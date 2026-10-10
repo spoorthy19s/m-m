@@ -89,6 +89,16 @@ a {
     outline-offset: 1px;
 }
 
+.nav-link-exit {
+    margin-top: 12px;
+    border: 1px solid #a95143;
+    background: #71352d;
+}
+
+.nav-link-exit:hover {
+    background: #934538;
+}
+
 .sidebar-welcome {
     margin: auto 0 0;
     color: var(--muted);
@@ -143,6 +153,25 @@ a {
     border-radius: 12px;
     background: linear-gradient(150deg, #25392b, var(--card));
     box-shadow: 0 8px 20px #0002;
+}
+
+.book-card {
+    background: linear-gradient(150deg, #2c3426, #1b241d);
+}
+
+.book-card .card-image {
+    height: 205px;
+    padding: 8px;
+    background: #e8dfc9;
+}
+
+.book-card .card-image img {
+    object-fit: contain;
+}
+
+.book-card h3 {
+    min-height: 3em;
+    color: #f3e8c9;
 }
 
 .card-image {
