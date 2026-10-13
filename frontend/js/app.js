@@ -199,7 +199,8 @@ function initializePage() {
     });
     renderCatalogue("items-content", MENU_ITEMS,
         ["Hot Beverages", "Desserts & Bakes", "Snacks & Spicy Items"], true);
-    renderCatalogue("books-content", BOOKS, ["General Fiction", "Non-Fiction", "Thrillers"]);
+    renderCatalogue("books-content", BOOKS,
+        ["General Fiction", "Classic Romance", "Romance", "Literary Fiction", "Political Satire", "Psychological Fiction", "Thrillers"]);
     renderBill();
     updateCartCount();
     initializeLogin();
