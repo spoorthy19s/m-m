@@ -57,4 +57,41 @@ BOOKS = [
     ("NEVER LIE", "Thrillers", "24.jpg"),
 ]
 
+def seed_database() -> tuple[int, int]:
+    """Create tables and idempotently insert/update the catalog rows."""
+    initialize_database()
+    connection = get_connection()
+    try:
+        connection.executemany(
+            """
+            INSERT INTO menu_items (category, name, price, image)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(category, name) DO UPDATE SET
+                price = excluded.price,
+                image = excluded.image
+            """,
+            MENU_ITEMS,
+        )
+        connection.executemany(
+            """
+            INSERT INTO books (title, genre, image)
+            VALUES (?, ?, ?)
+            ON CONFLICT(title, genre) DO UPDATE SET
+                image = excluded.image
+            """,
+            BOOKS,
+        )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
+    return len(MENU_ITEMS), len(BOOKS)
+
+
+if __name__ == "__main__":
+    menu_count, book_count = seed_database()
+    print(f"Seeded {menu_count} menu items and {book_count} books.")
+outputs/m-m/README.md
