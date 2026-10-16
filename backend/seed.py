@@ -32,3 +32,29 @@ MENU_ITEMS = [
     ("Snacks & Spicy Items", "PASTA", 140, "86.jpg"),
     ("Snacks & Spicy Items", "VEG MOMOS", 110, "87.jpg"),
 ]
+
+BOOKS = [
+    ("A SHIMLA AFFAIR", "General Fiction", "11.jpg"),
+    ("MARROW", "General Fiction", "16.jpg"),
+    ("BUTCHER & BLACKBIRD", "General Fiction", "17.jpeg"),
+    ("KING OF ENVY", "General Fiction", "13.jpg"),
+    ("GOD OF WAR", "General Fiction", "15.jpg"),
+    ("DAYS AT THE TORUNKA CAFE", "General Fiction", "12.jpg"),
+    ("SHATTER ME", "General Fiction", "14.jpg"),
+    ("THE METAMORPHOSIS", "Literary Fiction", "31.jpg"),
+    ("PRIDE AND PREJUDICE", "Classic Romance", "36.jpg"),
+    ("ANIMAL FARM", "Political Satire", "32.jpg"),
+    ("WHITE NIGHTS", "Romance", "37.jpg"),
+    ("NORWEGIAN WOOD", "Literary Fiction", "33.jpg"),
+    ("CRIME AND PUNISHMENT", "Psychological Fiction", "35.jpg"),
+    ("THE BELL JAR", "Literary Fiction", "34.jpg"),
+    ("HOW TO KILL MEN AND GET AWAY WITH IT", "Thrillers", "21.jpeg"),
+    ("SHARP OBJECTS", "Thrillers", "22.jpg"),
+    ("NONE OF THIS IS TRUE", "Thrillers", "23.jpg"),
+    ("THE FAVOURITE GIRL", "Thrillers", "27.jpg"),
+    ("THE FAMILY UPSTAIRS", "Thrillers", "25.jpg"),
+    ("ROCK PAPER SCISSORS", "Thrillers", "26.jpg"),
+    ("NEVER LIE", "Thrillers", "24.jpg"),
+]
+
+
