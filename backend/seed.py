@@ -94,4 +94,3 @@ def seed_database() -> tuple[int, int]:
 if __name__ == "__main__":
     menu_count, book_count = seed_database()
     print(f"Seeded {menu_count} menu items and {book_count} books.")
-outputs/m-m/README.md
