@@ -42,3 +42,71 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+class MenuItemResponse(BaseModel):
+    id: int
+    name: str
+    price: int
+    image: str | None
+
+
+class BookResponse(BaseModel):
+    id: int
+    title: str
+    genre: str
+    image: str | None
+
+
+class LoginRequest(BaseModel):
+    name: str
+    phone: str
+
+
+class LoginResponse(BaseModel):
+    customer_id: int
+    name: str
+
+
+class OrderItemRequest(BaseModel):
+    menu_item_id: int = Field(gt=0)
+    quantity: int = Field(ge=1, le=20)
+
+    class Config:
+        extra = "forbid"
+
+
+class OrderRequest(BaseModel):
+    customer_id: int = Field(gt=0)
+    items: list[OrderItemRequest]
+
+    class Config:
+        extra = "forbid"
+
+
+class OrderItemResponse(BaseModel):
+    menu_item_id: int
+    name: str
+    quantity: int
+    unit_price: int
+    line_total: int
+
+
+class OrderResponse(BaseModel):
+    order_id: int
+    items: list[OrderItemResponse]
+    total: int
+
+
+class RatingRequest(BaseModel):
+    customer_id: int = Field(gt=0)
+    stars: int = Field(strict=True, ge=1, le=5)
+    comment: str | None = None
+
+    class Config:
+        extra = "forbid"
+
+
+class RatingResponse(BaseModel):
+    message: str
+
+
