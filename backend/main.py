@@ -8,11 +8,11 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from catalog import books_grouped_by_genre, menu_grouped_by_category
-from customers import normalize_login, upsert_customer
-from database import get_connection, initialize_database
-from orders import CustomerNotFound, InvalidOrder, MenuItemNotFound, create_order
-from ratings import InvalidRating, RatingCustomerNotFound, save_rating
+from backend.services.catalog import books_grouped_by_genre, menu_grouped_by_category
+from backend.services.customers import normalize_login, upsert_customer
+from backend.database.database import get_connection, initialize_database
+from backend.services.orders import CustomerNotFound, InvalidOrder, MenuItemNotFound, create_order
+from backend.services.ratings import InvalidRating, RatingCustomerNotFound, save_rating
 
 
 @asynccontextmanager
