@@ -193,6 +193,12 @@ function initializeExitLinks() {
 }
 
 function initializePage() {
+    const activePage = { items: "menu.html", books: "books.html", orders: "bill.html", about: "about.html" }[document.body.dataset.page];
+    if (activePage) {
+        document.querySelectorAll(".navigation .nav-link").forEach(link => {
+            link.classList.toggle("active", link.getAttribute("href") === activePage);
+        });
+    }
     const customer = localStorage.getItem(CUSTOMER_KEY);
     document.querySelectorAll(".sidebar-welcome").forEach(node => {
         node.textContent = customer ? `Welcome, ${customer}` : "Welcome to the cafe";

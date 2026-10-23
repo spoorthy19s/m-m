@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from backend.services.catalog import books_grouped_by_genre, menu_grouped_by_category
 from backend.services.customers import normalize_login, upsert_customer
 from backend.database.database import get_connection, initialize_database
+from backend.database.seed import seed_database
 from backend.services.orders import CustomerNotFound, InvalidOrder, MenuItemNotFound, create_order
 from backend.services.ratings import InvalidRating, RatingCustomerNotFound, save_rating
 
@@ -19,6 +20,7 @@ from backend.services.ratings import InvalidRating, RatingCustomerNotFound, save
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Create the SQLite tables once when the application starts."""
     initialize_database()
+    seed_database()
     yield
 
 

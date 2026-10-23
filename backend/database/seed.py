@@ -5,7 +5,7 @@ Safe to rerun: rows are inserted or updated by their unique catalog keys.
 
 from __future__ import annotations
 
-from database import get_connection, initialize_database
+from backend.database.database import get_connection, initialize_database
 
 
 # Keep the catalog definitions here as the backend seed data source.
