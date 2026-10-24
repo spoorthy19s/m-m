@@ -19,7 +19,8 @@ async function api(path, options = {}) {
 
 
 const CART_KEY = "margins-and-mugs-cart";
-const CUSTOMER_KEY = "margins-and-mugs-customer";
+const CUSTOMER_ID_KEY = "margins-and-mugs-customer-id";
+const CUSTOMER_NAME_KEY = "margins-and-mugs-customer-name";
 const ROOT = document.body.dataset.root || "";
 const money = amount => `₹${amount}`;
 const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -30,22 +31,24 @@ function getCart() {
 }
 function saveCart(cart) { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
 
-function createCard(name, filename, price = null) {
+function createCard(item, menu = false) {
+    const { id, name, title, image, price } = item;
+    const label = menu ? name : title;
     const card = document.createElement("article");
-    card.className = price === null ? "card book-card" : "card menu-card";
+    card.className = menu ? "card menu-card" : "card book-card";
     const imageBox = document.createElement("div");
     imageBox.className = "card-image";
-    const image = document.createElement("img");
-    image.src = `${ROOT}images/${filename}`;
-    image.alt = name;
-    image.loading = "lazy";
-    image.onerror = () => { imageBox.textContent = "Image not found"; };
-    imageBox.append(image);
-    const title = document.createElement("h3");
-    title.textContent = name;
-    card.append(imageBox, title);
+    const imageNode = document.createElement("img");
+    imageNode.src = `${ROOT}images/${image}`;
+    imageNode.alt = label;
+    imageNode.loading = "lazy";
+    imageNode.onerror = () => { imageBox.textContent = "Image not found"; };
+    imageBox.append(imageNode);
+    const titleNode = document.createElement("h3");
+    titleNode.textContent = label;
+    card.append(imageBox, titleNode);
 
-    if (price !== null) {
+    if (menu) {
         const priceLabel = document.createElement("p");
         priceLabel.className = "price";
         priceLabel.textContent = money(price);
@@ -53,35 +56,35 @@ function createCard(name, filename, price = null) {
         controls.className = "quantity";
         const minus = document.createElement("button");
         minus.type = "button"; minus.textContent = "−";
-        minus.setAttribute("aria-label", `Remove one ${name}`);
+        minus.setAttribute("aria-label", `Remove one ${label}`);
         const quantity = document.createElement("output");
-        quantity.id = `qty-${slug(name)}`;
-        quantity.textContent = getCart()[name]?.qty || 0;
+        quantity.id = `qty-${id}`;
+        quantity.textContent = getCart()[id]?.qty || 0;
         const plus = document.createElement("button");
         plus.type = "button"; plus.textContent = "+";
-        plus.setAttribute("aria-label", `Add one ${name}`);
-        minus.addEventListener("click", () => changeQuantity(name, price, -1));
-        plus.addEventListener("click", () => changeQuantity(name, price, 1));
+        plus.setAttribute("aria-label", `Add one ${label}`);
+        minus.addEventListener("click", () => changeQuantity(id, label, price, -1));
+        plus.addEventListener("click", () => changeQuantity(id, label, price, 1));
         controls.append(minus, quantity, plus);
         card.append(priceLabel, controls);
     }
     return card;
 }
 
-function renderCatalogue(targetId, data, categories, menu = false) {
+function renderCatalogue(targetId, groupedItems, menu = false) {
     const target = document.getElementById(targetId);
     if (!target) return;
-    categories.forEach(category => {
+    target.replaceChildren();
+    Object.entries(groupedItems).forEach(([category, items]) => {
         const heading = document.createElement("h2");
         heading.className = "category";
         heading.textContent = category;
         const cards = document.createElement("div");
         cards.className = "cards";
-        data.filter(row => row[0] === category).forEach(row => {
-            cards.append(createCard(row[1], menu ? row[3] : row[2], menu ? row[2] : null));
-        });
-        target.append(heading, cards);
+        items.forEach(item => cards.append(createCard(item, menu)));
     });
+    target.append(heading, cards);
+});
 }
 
 function changeQuantity(name, price, difference) {
