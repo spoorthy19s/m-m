@@ -1,32 +1,22 @@
 "use strict";
 
-// Shared site data. Place the image files in ../images/ from the HTML pages.
-const MENU_ITEMS = [
-    ["Hot Beverages", "ESPRESSO", 90, "esp.jpg"], ["Hot Beverages", "MASALA TEA", 40, "tea.jpg"],
-    ["Hot Beverages", "AMERICANO", 120, "americano.jpg"], ["Hot Beverages", "CAPPUCCINO", 150, "cappuccino.jpg"],
-    ["Hot Beverages", "MOCHA", 170, "mocha.jpg"], ["Hot Beverages", "ICED LATTE", 180, "latte.jpg"],
-    ["Hot Beverages", "HOT CHOCOLATE", 160, "hot.jpeg"], ["Desserts & Bakes", "BUTTER CROISSANT", 70, "91.jpg"],
-    ["Desserts & Bakes", "CHOCOLATE MUFFIN", 80, "92.jpg"], ["Desserts & Bakes", "WAFFLE WITH SAUCE", 140, "93.jpg"],
-    ["Desserts & Bakes", "BLUEBERRY CHEESECAKE", 160, "96.jpg"], ["Desserts & Bakes", "CHOCOLATE SWISS ROLL", 120, "95.jpg"],
-    ["Desserts & Bakes", "ICE CREAM SUNDAE", 130, "94.jpg"], ["Desserts & Bakes", "FRUIT CAKE (SLICE)", 100, "97.jpg"],
-    ["Snacks & Spicy Items", "GRILLED VEG SANDWICH", 90, "81.jpg"], ["Snacks & Spicy Items", "VEG PUFF", 50, "82.jpg"],
-    ["Snacks & Spicy Items", "SPICY HAKKA NOODLES", 120, "83.jpg"], ["Snacks & Spicy Items", "MASALA FRIES", 100, "84.jpg"],
-    ["Snacks & Spicy Items", "CHEESE CORN TOAST", 90, "85.jpg"], ["Snacks & Spicy Items", "PASTA", 140, "86.jpg"],
-    ["Snacks & Spicy Items", "VEG MOMOS", 110, "87.jpg"]
-];
-const BOOKS = [
-    ["General Fiction", "A SHIMLA AFFAIR", "11.jpg"], ["General Fiction", "MARROW", "16.jpg"],
-    ["General Fiction", "BUTCHER & BLACKBIRD", "17.jpeg"], ["General Fiction", "KING OF ENVY", "13.jpg"],
-    ["General Fiction", "GOD OF WAR", "15.jpg"], ["General Fiction", "DAYS AT THE TORUNKA CAFE", "12.jpg"],
-    ["General Fiction", "SHATTER ME", "14.jpg"], ["Literary Fiction", "THE METAMORPHOSIS", "31.jpg"],
-    ["Classic Romance", "PRIDE AND PREJUDICE", "36.jpg"], ["Political Satire", "ANIMAL FARM", "32.jpg"],
-    ["Romance", "WHITE NIGHTS", "37.jpg"], ["Literary Fiction", "NORWEGIAN WOOD", "33.jpg"],
-    ["Psychological Fiction", "CRIME AND PUNISHMENT", "35.jpg"], ["Literary Fiction", "THE BELL JAR", "34.jpg"],
-    ["Thrillers", "HOW TO KILL MEN AND GET AWAY WITH IT", "21.jpeg"], ["Thrillers", "SHARP OBJECTS", "22.jpg"],
-    ["Thrillers", "NONE OF THIS IS TRUE", "23.jpg"], ["Thrillers", "THE FAVOURITE GIRL", "27.jpg"],
-    ["Thrillers", "THE FAMILY UPSTAIRS", "25.jpg"], ["Thrillers", "ROCK PAPER SCISSORS", "26.jpg"],
-    ["Thrillers", "NEVER LIE", "24.jpg"]
-];
+const API = "http://127.0.0.1:8000/api"; // later: "/api"
+
+async function api(path, options = {}) {
+    const res = await fetch(`${API}${path}`, {
+        headers: { "Content-Type": "application/json" }, ...options
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        const detail = data.detail;
+        const message = Array.isArray(detail)
+            ? detail.map(issue => issue.msg).join(" ")
+            : detail;
+        throw new Error(message || "Request failed");
+    }
+    return data;
+}
+
 
 const CART_KEY = "margins-and-mugs-cart";
 const CUSTOMER_KEY = "margins-and-mugs-customer";
