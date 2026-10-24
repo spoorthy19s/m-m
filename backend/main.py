@@ -2,15 +2,15 @@
 
 from contextlib import asynccontextmanager
 import sqlite3
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.services.catalog import books_grouped_by_genre, menu_grouped_by_category
 from backend.services.customers import normalize_login, upsert_customer
-from backend.database.database import get_connection, initialize_database
+from backend.database.database import get_connection, get_db, initialize_database
 from backend.database.seed import seed_database
 from backend.services.orders import CustomerNotFound, InvalidOrder, MenuItemNotFound, create_order
 from backend.services.ratings import InvalidRating, RatingCustomerNotFound, save_rating
@@ -73,16 +73,14 @@ class OrderItemRequest(BaseModel):
     menu_item_id: int = Field(gt=0)
     quantity: int = Field(ge=1, le=20)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class OrderRequest(BaseModel):
     customer_id: int = Field(gt=0)
-    items: list[OrderItemRequest]
+    items: list[OrderItemRequest] = Field(min_length=1)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class OrderItemResponse(BaseModel):
@@ -104,21 +102,10 @@ class RatingRequest(BaseModel):
     stars: int = Field(strict=True, ge=1, le=5)
     comment: str | None = None
 
-    class Config:
-        extra = "forbid"
-
+    model_config = ConfigDict(extra="forbid")
 
 class RatingResponse(BaseModel):
     message: str
-
-
-def get_db() -> Iterator[sqlite3.Connection]:
-    """FastAPI dependency that closes its connection after the request."""
-    connection = get_connection()
-    try:
-        yield connection
-    finally:
-        connection.close()
 
 
 @app.get("/api/health", tags=["Health"])
