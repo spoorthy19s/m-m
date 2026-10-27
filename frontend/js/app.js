@@ -1,10 +1,17 @@
 "use strict";
 
-const API = "http://127.0.0.1:8000/api"; // later: "/api"
+const API = "/api";
 
 async function api(path, options = {}) {
+    const { headers = {}, ...requestOptions } = options;
+    const token = localStorage.getItem(SESSION_TOKEN_KEY);
     const res = await fetch(`${API}${path}`, {
-        headers: { "Content-Type": "application/json" }, ...options
+        ...requestOptions,
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...headers
+        }
     });
     const data = await res.json();
     if (!res.ok) {
@@ -17,9 +24,8 @@ async function api(path, options = {}) {
     return data;
 }
 
-
 const CART_KEY = "margins-and-mugs-cart";
-const CUSTOMER_ID_KEY = "margins-and-mugs-customer-id";
+const SESSION_TOKEN_KEY = "margins-and-mugs-session-token";
 const CUSTOMER_NAME_KEY = "margins-and-mugs-customer-name";
 const ROOT = document.body.dataset.root || "";
 const money = amount => `₹${amount}`;
@@ -151,8 +157,8 @@ function renderBill() {
     placeOrder.className = "button button-primary";
     placeOrder.textContent = "Place Order";
     placeOrder.addEventListener("click", async () => {
-        const customerId = Number(localStorage.getItem(CUSTOMER_ID_KEY));
-        if (!customerId) {
+        const sessionToken = localStorage.getItem(SESSION_TOKEN_KEY);
+        if (!sessionToken) {
             message.textContent = "Please log in before placing an order.";
             return;
         }
@@ -161,7 +167,6 @@ function renderBill() {
             const order = await api("/orders", {
                 method: "POST",
                 body: JSON.stringify({
-                    customer_id: customerId,
                     items: entries.map(([id, item]) => ({ menu_item_id: Number(id), quantity: item.qty }))
                 })
             });
@@ -192,7 +197,7 @@ function initializeLogin() {
                 method: "POST",
                 body: JSON.stringify({ name, phone })
             });
-            localStorage.setItem(CUSTOMER_ID_KEY, customer.customer_id);
+            localStorage.setItem(SESSION_TOKEN_KEY, customer.access_token);
             localStorage.setItem(CUSTOMER_NAME_KEY, customer.name);
             window.location.href = `${ROOT}html/menu.html`;
         } catch (error) {
@@ -212,13 +217,13 @@ function initializeRating() {
     document.getElementById("submit-rating")?.addEventListener("click", async () => {
         const message = document.getElementById("rating-message");
         message.textContent = "";
-        const customerId = Number(localStorage.getItem(CUSTOMER_ID_KEY));
-        if (!customerId) { message.textContent = "Please log in before submitting a rating."; return; }
+        const sessionToken = localStorage.getItem(SESSION_TOKEN_KEY);
+        if (!sessionToken) { message.textContent = "Please log in before submitting a rating."; return; }
         if (!rating) { message.textContent = "Please select a star rating."; return; }
         try {
             const result = await api("/ratings", {
                 method: "POST",
-                body: JSON.stringify({ customer_id: customerId, stars: rating, comment: null })
+                body: JSON.stringify({ stars: rating, comment: null })
             });
             message.textContent = result.message;
         } catch (error) {
@@ -243,27 +248,22 @@ function initializePage() {
         });
     }
     const customerName = localStorage.getItem(CUSTOMER_NAME_KEY);
-    document.querySelectorAll(".navigation .nav-link").forEach(link => {
-        link.classList.toggle("active", link.getAttribute("href") === activePage);
+    document.querySelectorAll(".sidebar-welcome").forEach(node => {
+        node.textContent = customerName ? `Welcome, ${customerName}` : "Welcome to the cafe";
     });
+    if (document.getElementById("items-content")) {
+        api("/menu").then(items => renderCatalogue("items-content", items, true))
+            .catch(error => showCatalogueError("items-content", error));
+    }
+    if (document.getElementById("books-content")) {
+        api("/books").then(books => renderCatalogue("books-content", books))
+            .catch(error => showCatalogueError("books-content", error));
+    }
+    renderBill();
+    updateCartCount();
+    initializeLogin();
+    initializeRating();
+    initializeExitLinks();
 }
-const customerName = localStorage.getItem(CUSTOMER_NAME_KEY);
-document.querySelectorAll(".sidebar-welcome").forEach(node => {
-    node.textContent = customerName ? `Welcome, ${customerName}` : "Welcome to the cafe";
-});
-if (document.getElementById("items-content")) {
-    api("/menu").then(items => renderCatalogue("items-content", items, true))
-        .catch(error => showCatalogueError("items-content", error));
-}
-if (document.getElementById("books-content")) {
-    api("/books").then(books => renderCatalogue("books-content", books))
-        .catch(error => showCatalogueError("books-content", error));
-}
-renderBill();
-updateCartCount();
-initializeLogin();
-initializeRating();
-initializeExitLinks();
-
 
 document.addEventListener("DOMContentLoaded", initializePage);
