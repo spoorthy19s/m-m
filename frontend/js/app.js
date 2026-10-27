@@ -5,30 +5,44 @@ const API = "/api";
 async function api(path, options = {}) {
     const { headers = {}, ...requestOptions } = options;
     const token = localStorage.getItem(SESSION_TOKEN_KEY);
-    const res = await fetch(`${API}${path}`, {
-        ...requestOptions,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...headers
-        }
-    });
-    const data = await res.json();
+    let res;
+    try {
+        res = await fetch(`${API}${path}`, {
+            ...requestOptions,
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                ...headers
+            }
+        });
+    } catch {
+        throw new Error("Cannot reach the server. Please try again.");
+    }
+    let data = null;
+    try { data = await res.json(); } catch { /* body was not JSON */ }
+
     if (res.status === 401) {
-        localStorage.removeItem(SESSION_TOKEN_KEY);
+        clearSession();
         window.location.href = `${ROOT}index.html`;
+        throw new Error(data?.detail || "Please log in.");
     }
     if (!res.ok) {
-        const detail = data.detail;
+        const detail = data?.detail;
         const message = Array.isArray(detail)
             ? detail.map(issue => issue.msg).join(" ")
             : detail;
-        throw new Error(message || "Request failed");
+        throw new Error(message || `Request failed (${res.status}).`);
     }
+    if (data === null) throw new Error("Unexpected response from the server.");
     return data;
 }
 
-const CART_KEY = "margins-and-mugs-cart";
+function clearSession() {
+    localStorage.removeItem(SESSION_TOKEN_KEY);
+    localStorage.removeItem(CUSTOMER_NAME_KEY);
+}
+
+const CART_KEY = "margins-and-mugs-cart-v2";
 const SESSION_TOKEN_KEY = "margins-and-mugs-session-token";
 const CUSTOMER_NAME_KEY = "margins-and-mugs-customer-name";
 const ROOT = document.body.dataset.root || "";
@@ -201,9 +215,8 @@ function initializeLogin() {
                 method: "POST",
                 body: JSON.stringify({ name, phone })
             });
-            if (customer.access_token) {
-                localStorage.setItem(SESSION_TOKEN_KEY, customer.access_token);
-            }
+            if (!customer.access_token) throw new Error("Login failed. Please try again.");
+            localStorage.setItem(SESSION_TOKEN_KEY, customer.access_token);
             localStorage.setItem(CUSTOMER_NAME_KEY, customer.name);
             window.location.href = `${ROOT}html/menu.html`;
         } catch (error) {
@@ -231,7 +244,10 @@ function initializeRating() {
                 method: "POST",
                 body: JSON.stringify({ stars: rating, comment: null })
             });
-            message.textContent = result.message;
+            message.textContent = `${result.message} Thank you for visiting!`;
+            document.getElementById("submit-rating").disabled = true;
+            clearSession();
+            setTimeout(() => { window.location.href = `${ROOT}index.html`; }, 2500);
         } catch (error) {
             message.textContent = error.message;
         }
