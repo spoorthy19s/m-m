@@ -14,6 +14,10 @@ async function api(path, options = {}) {
         }
     });
     const data = await res.json();
+    if (res.status === 401) {
+        localStorage.removeItem(SESSION_TOKEN_KEY);
+        window.location.href = `${ROOT}index.html`;
+    }
     if (!res.ok) {
         const detail = data.detail;
         const message = Array.isArray(detail)
@@ -197,7 +201,9 @@ function initializeLogin() {
                 method: "POST",
                 body: JSON.stringify({ name, phone })
             });
-            localStorage.setItem(SESSION_TOKEN_KEY, customer.access_token);
+            if (customer.access_token) {
+                localStorage.setItem(SESSION_TOKEN_KEY, customer.access_token);
+            }
             localStorage.setItem(CUSTOMER_NAME_KEY, customer.name);
             window.location.href = `${ROOT}html/menu.html`;
         } catch (error) {
