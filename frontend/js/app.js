@@ -87,13 +87,22 @@ function renderCatalogue(targetId, groupedItems, menu = false) {
 });
 }
 
-function changeQuantity(name, price, difference) {
+function showCatalogueError(targetId, error) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const message = document.createElement("p");
+    message.className = "form-message";
+    message.textContent = error.message;
+    target.replaceChildren(message);
+}
+
+function changeQuantity(id, name, price, difference) {
     const cart = getCart();
-    const quantity = Math.max(0, (cart[name]?.qty || 0) + difference);
-    if (quantity) cart[name] = { price, qty: quantity };
-    else delete cart[name];
+    const quantity = Math.max(0, (cart[id]?.qty || 0) + difference);
+    if (quantity) cart[id] = { name, price, qty: quantity };
+    else delete cart[id];
     saveCart(cart);
-    const output = document.getElementById(`qty-${slug(name)}`);
+    const output = document.getElementById(`qty-${id}`);
     if (output) output.textContent = quantity;
     renderBill();
     updateCartCount();
@@ -108,6 +117,11 @@ function renderBill() {
     const target = document.getElementById("order-content");
     if (!target) return;
     target.replaceChildren();
+    const message = document.createElement("p");
+    message.className = "form-message";
+    message.id = "order-message";
+    message.setAttribute("aria-live", "polite");
+    target.append(message);
     const cart = getCart();
     const entries = Object.entries(cart);
     if (!entries.length) {
@@ -119,13 +133,13 @@ function renderBill() {
     }
     const bill = document.createElement("div");
     bill.className = "bill";
-    let total = 0;
-    entries.forEach(([name, item]) => {
+    let estimatedTotal = 0;
+    entries.forEach(([, item]) => {
         const subtotal = item.price * item.qty;
-        total += subtotal;
+        estimatedTotal += subtotal;
         const row = document.createElement("div");
         row.className = "bill-row";
-        const label = document.createElement("span"); label.textContent = name;
+        const label = document.createElement("span"); label.textContent = item.name;
         const quantity = document.createElement("span"); quantity.textContent = `× ${item.qty}`;
         const amount = document.createElement("strong"); amount.textContent = money(subtotal);
         row.append(label, quantity, amount);
@@ -133,7 +147,7 @@ function renderBill() {
     });
     const totalLabel = document.createElement("p");
     totalLabel.className = "bill-total";
-    totalLabel.textContent = `Total: ${money(total)}`;
+    totalLabel.textContent = `Estimated total: ${money(estimatedTotal)}`;
     const placeOrder = document.createElement("button");
     placeOrder.className = "button button-primary";
     placeOrder.textContent = "Place Order";
