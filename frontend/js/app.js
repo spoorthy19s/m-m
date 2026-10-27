@@ -181,15 +181,23 @@ function renderBill() {
 function initializeLogin() {
     const form = document.getElementById("login-form");
     if (!form) return;
-    form.addEventListener("submit", event => {
+    form.addEventListener("submit", async event => {
         event.preventDefault();
         const name = document.getElementById("customer-name").value.trim();
-        const phone = document.getElementById("customer-phone").value.replace(/[\s()+-]/g, "");
+        const phone = document.getElementById("customer-phone").value;
         const message = document.getElementById("login-message");
-        if (!name) { message.textContent = "Please enter your name."; return; }
-        if (!/^\d{7,15}$/.test(phone)) { message.textContent = "Enter a phone number with 7 to 15 digits."; return; }
-        localStorage.setItem(CUSTOMER_KEY, name);
-        window.location.href = `${ROOT}html/menu.html`;
+        message.textContent = "";
+        try {
+            const customer = await api("/login", {
+                method: "POST",
+                body: JSON.stringify({ name, phone })
+            });
+            localStorage.setItem(CUSTOMER_ID_KEY, customer.customer_id);
+            localStorage.setItem(CUSTOMER_NAME_KEY, customer.name);
+            window.location.href = `${ROOT}html/menu.html`;
+        } catch (error) {
+            message.textContent = error.message;
+        }
     });
 }
 
