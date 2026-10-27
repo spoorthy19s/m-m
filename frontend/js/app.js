@@ -209,10 +209,21 @@ function initializeRating() {
         rating = Number(star.dataset.rating);
         stars.forEach(item => { item.textContent = Number(item.dataset.rating) <= rating ? "★" : "☆"; });
     }));
-    document.getElementById("submit-rating")?.addEventListener("click", () => {
+    document.getElementById("submit-rating")?.addEventListener("click", async () => {
         const message = document.getElementById("rating-message");
+        message.textContent = "";
+        const customerId = Number(localStorage.getItem(CUSTOMER_ID_KEY));
+        if (!customerId) { message.textContent = "Please log in before submitting a rating."; return; }
         if (!rating) { message.textContent = "Please select a star rating."; return; }
-        message.textContent = `Thank you for rating us ${rating} out of 5 stars!`;
+        try {
+            const result = await api("/ratings", {
+                method: "POST",
+                body: JSON.stringify({ customer_id: customerId, stars: rating, comment: null })
+            });
+            message.textContent = result.message;
+        } catch (error) {
+            message.textContent = error.message;
+        }
     });
 }
 
@@ -231,19 +242,28 @@ function initializePage() {
             link.classList.toggle("active", link.getAttribute("href") === activePage);
         });
     }
-    const customer = localStorage.getItem(CUSTOMER_KEY);
-    document.querySelectorAll(".sidebar-welcome").forEach(node => {
-        node.textContent = customer ? `Welcome, ${customer}` : "Welcome to the cafe";
+    const customerName = localStorage.getItem(CUSTOMER_NAME_KEY);
+    document.querySelectorAll(".navigation .nav-link").forEach(link => {
+        link.classList.toggle("active", link.getAttribute("href") === activePage);
     });
-    renderCatalogue("items-content", MENU_ITEMS,
-        ["Hot Beverages", "Desserts & Bakes", "Snacks & Spicy Items"], true);
-    renderCatalogue("books-content", BOOKS,
-        ["General Fiction", "Classic Romance", "Romance", "Literary Fiction", "Political Satire", "Psychological Fiction", "Thrillers"]);
-    renderBill();
-    updateCartCount();
-    initializeLogin();
-    initializeRating();
-    initializeExitLinks();
 }
+const customerName = localStorage.getItem(CUSTOMER_NAME_KEY);
+document.querySelectorAll(".sidebar-welcome").forEach(node => {
+    node.textContent = customerName ? `Welcome, ${customerName}` : "Welcome to the cafe";
+});
+if (document.getElementById("items-content")) {
+    api("/menu").then(items => renderCatalogue("items-content", items, true))
+        .catch(error => showCatalogueError("items-content", error));
+}
+if (document.getElementById("books-content")) {
+    api("/books").then(books => renderCatalogue("books-content", books))
+        .catch(error => showCatalogueError("books-content", error));
+}
+renderBill();
+updateCartCount();
+initializeLogin();
+initializeRating();
+initializeExitLinks();
+
 
 document.addEventListener("DOMContentLoaded", initializePage);
