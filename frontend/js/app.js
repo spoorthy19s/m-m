@@ -150,12 +150,30 @@ function renderBill() {
     const placeOrder = document.createElement("button");
     placeOrder.className = "button button-primary";
     placeOrder.textContent = "Place Order";
-    placeOrder.addEventListener("click", () => {
-        const customer = localStorage.getItem(CUSTOMER_KEY) || "there";
-        window.alert(`Thank you, ${customer}! Your order for ${money(total)} has been placed.`);
-        localStorage.removeItem(CART_KEY);
-        renderBill();
-        updateCartCount();
+    placeOrder.addEventListener("click", async () => {
+        const customerId = Number(localStorage.getItem(CUSTOMER_ID_KEY));
+        if (!customerId) {
+            message.textContent = "Please log in before placing an order.";
+            return;
+        }
+        placeOrder.disabled = true;
+        try {
+            const order = await api("/orders", {
+                method: "POST",
+                body: JSON.stringify({
+                    customer_id: customerId,
+                    items: entries.map(([id, item]) => ({ menu_item_id: Number(id), quantity: item.qty }))
+                })
+            });
+            window.alert(`Order placed. Server total: ${money(order.total)}`);
+            localStorage.removeItem(CART_KEY);
+            renderBill();
+            document.getElementById("order-message").textContent = `Order placed. Total: ${money(order.total)}`;
+            updateCartCount();
+        } catch (error) {
+            message.textContent = error.message;
+            placeOrder.disabled = false;
+        }
     });
     target.append(bill, totalLabel, placeOrder);
 }
