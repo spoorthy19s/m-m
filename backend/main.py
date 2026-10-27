@@ -4,12 +4,13 @@ from contextlib import asynccontextmanager
 import sqlite3
 from typing import AsyncIterator
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.services.catalog import books_grouped_by_genre, menu_grouped_by_category
 from backend.services.customers import normalize_login, upsert_customer
+from backend.services.auth import create_session_token, verify_session_token
 from backend.database.database import get_connection, get_db, initialize_database
 from backend.database.seed import seed_database
 from backend.services.orders import CustomerNotFound, InvalidOrder, MenuItemNotFound, create_order
@@ -42,7 +43,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=DEVELOPMENT_ORIGINS,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 class MenuItemResponse(BaseModel):
@@ -67,6 +68,16 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     customer_id: int
     name: str
+    access_token: str
+
+
+def current_customer_id(authorization: str | None = Header(default=None)) -> int:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Please log in.")
+    try:
+        return verify_session_token(authorization[7:])
+    except ValueError as error:
+        raise HTTPException(401, str(error)) from error
 
 
 class OrderItemRequest(BaseModel):
@@ -77,7 +88,6 @@ class OrderItemRequest(BaseModel):
 
 
 class OrderRequest(BaseModel):
-    customer_id: int = Field(gt=0)
     items: list[OrderItemRequest] = Field(min_length=1)
 
     model_config = ConfigDict(extra="forbid")
@@ -98,7 +108,6 @@ class OrderResponse(BaseModel):
 
 
 class RatingRequest(BaseModel):
-    customer_id: int = Field(gt=0)
     stars: int = Field(strict=True, ge=1, le=5)
     comment: str | None = None
 
@@ -141,19 +150,21 @@ def login(
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
-    return upsert_customer(connection, name, phone)
+    customer = upsert_customer(connection, name, phone)
+    return {**customer, "access_token": create_session_token(customer["customer_id"])}
 
 
 @app.post("/api/orders", tags=["Orders"], response_model=OrderResponse)
 def submit_order(
     payload: OrderRequest,
+    customer_id: int = Depends(current_customer_id),
     connection: sqlite3.Connection = Depends(get_db),
 ) -> dict[str, object]:
     """Create an order; prices and totals are always calculated server-side."""
     try:
         return create_order(
             connection,
-            payload.customer_id,
+            customer_id,
             [(item.menu_item_id, item.quantity) for item in payload.items],
         )
     except CustomerNotFound as error:
@@ -167,13 +178,14 @@ def submit_order(
 @app.post("/api/ratings", tags=["Ratings"], response_model=RatingResponse)
 def submit_rating(
     payload: RatingRequest,
+    customer_id: int = Depends(current_customer_id),
     connection: sqlite3.Connection = Depends(get_db),
 ) -> dict[str, str]:
     """Save a customer rating after checking its customer and comment."""
     try:
         message = save_rating(
             connection,
-            payload.customer_id,
+            customer_id,
             payload.stars,
             payload.comment,
         )
