@@ -82,9 +82,8 @@ function renderCatalogue(targetId, groupedItems, menu = false) {
         const cards = document.createElement("div");
         cards.className = "cards";
         items.forEach(item => cards.append(createCard(item, menu)));
+        target.append(heading, cards);
     });
-    target.append(heading, cards);
-});
 }
 
 function showCatalogueError(targetId, error) {
