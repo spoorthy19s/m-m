@@ -1,17 +1,23 @@
 """FastAPI application entry point for Margins & Mugs."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 import sqlite3
 from typing import AsyncIterator
 
+from dotenv import load_dotenv
+
+load_dotenv()  # must run before importing backend.services.auth
+
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.services.auth import create_session_token, verify_session_token
 from backend.services.catalog import books_grouped_by_genre, menu_grouped_by_category
 from backend.services.customers import normalize_login, upsert_customer
-from backend.services.auth import create_session_token, verify_session_token
-from backend.database.database import get_connection, get_db, initialize_database
+from backend.database.database import get_db, initialize_database
 from backend.database.seed import seed_database
 from backend.services.orders import CustomerNotFound, InvalidOrder, MenuItemNotFound, create_order
 from backend.services.ratings import InvalidRating, RatingCustomerNotFound, save_rating
@@ -43,7 +49,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=DEVELOPMENT_ORIGINS,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type"],
 )
 
 class MenuItemResponse(BaseModel):
@@ -69,15 +75,6 @@ class LoginResponse(BaseModel):
     customer_id: int
     name: str
     access_token: str
-
-
-def current_customer_id(authorization: str | None = Header(default=None)) -> int:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "Please log in.")
-    try:
-        return verify_session_token(authorization[7:])
-    except ValueError as error:
-        raise HTTPException(401, str(error)) from error
 
 
 class OrderItemRequest(BaseModel):
@@ -117,6 +114,24 @@ class RatingResponse(BaseModel):
     message: str
 
 
+def current_customer_id(authorization: str | None = Header(default=None)) -> int:
+    """Return the customer id from a valid 'Authorization: Bearer <token>' header."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Please log in.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        return verify_session_token(authorization[len("Bearer "):])
+    except ValueError as error:
+        raise HTTPException(
+            status_code=401,
+            detail=str(error),
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from error
+
+
 @app.get("/api/health", tags=["Health"])
 def health_check(_connection: sqlite3.Connection = Depends(get_db)) -> dict[str, str]:
     """Report that the API is running and the request database opened."""
@@ -151,7 +166,7 @@ def login(
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     customer = upsert_customer(connection, name, phone)
-    return {**customer, "access_token": create_session_token(customer["customer_id"])}
+    return {**customer, "access_token": create_session_token(int(customer["customer_id"]))}
 
 
 @app.post("/api/orders", tags=["Orders"], response_model=OrderResponse)
@@ -194,3 +209,8 @@ def submit_rating(
     except InvalidRating as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     return {"message": message}
+
+
+# Keep this at the very end: a "/" mount would otherwise swallow the /api routes.
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
