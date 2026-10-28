@@ -7,5 +7,3 @@ venv/
 *.sqlite3
 backend/models/*.joblib
 .DS_Store
-__pycache__/*.pyc
-cafe.db

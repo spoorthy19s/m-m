@@ -129,6 +129,7 @@ function changeQuantity(id, name, price, difference) {
     const quantity = Math.max(0, (cart[id]?.qty || 0) + difference);
     if (quantity) cart[id] = { name, price, qty: quantity };
     else delete cart[id];
+    if (difference > 0) localStorage.removeItem(RECEIPT_KEY);
     saveCart(cart);
     const output = document.getElementById(`qty-${id}`);
     if (output) output.textContent = quantity;
@@ -272,6 +273,10 @@ function initializeLogin() {
 function initializeRating() {
     const stars = [...document.querySelectorAll(".star")];
     if (!stars.length) return;
+    document.getElementById("skip-rating")?.addEventListener("click", () => {
+        clearSession();
+        window.location.href = `${ROOT}index.html`;
+    });
     let rating = 0;
     stars.forEach(star => star.setAttribute("aria-pressed", "false"));
     stars.forEach(star => star.addEventListener("click", () => {
