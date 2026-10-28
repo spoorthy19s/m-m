@@ -8,6 +8,7 @@ from typing import AsyncIterator
 from dotenv import load_dotenv
 
 load_dotenv()  # must run before importing backend.services.auth
+import os
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,18 +39,26 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-DEVELOPMENT_ORIGINS = [
+DEFAULT_DEV_ORIGINS = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
 
+
+def _allowed_origins() -> list[str]:
+    """Read comma-separated origins from CORS_ORIGINS, or use the dev defaults."""
+    raw = os.environ.get("CORS_ORIGINS", "")
+    origins = [origin.strip().rstrip("/") for origin in raw.split(",") if origin.strip()]
+    return origins or DEFAULT_DEV_ORIGINS
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=DEVELOPMENT_ORIGINS,
+    allow_origins=_allowed_origins(),
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 class MenuItemResponse(BaseModel):
