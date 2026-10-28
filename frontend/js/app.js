@@ -31,7 +31,9 @@ async function api(path, options = {}) {
         const message = Array.isArray(detail)
             ? detail.map(issue => issue.msg).join(" ")
             : detail;
-        throw new Error(message || `Request failed (${res.status}).`);
+        const error = new Error(message || `Request failed (${res.status}).`);
+        error.status = res.status;
+        throw error;
     }
     if (data === null) throw new Error("Unexpected response from the server.");
     return data;
@@ -41,11 +43,13 @@ function clearSession() {
     localStorage.removeItem(SESSION_TOKEN_KEY);
     localStorage.removeItem(CUSTOMER_NAME_KEY);
     localStorage.removeItem(CART_KEY);
+    localStorage.removeItem(RECEIPT_KEY);
 }
 
 const CART_KEY = "margins-and-mugs-cart-v2";
 const SESSION_TOKEN_KEY = "margins-and-mugs-session-token";
 const CUSTOMER_NAME_KEY = "margins-and-mugs-customer-name";
+const RECEIPT_KEY = "margins-and-mugs-last-receipt";
 const ROOT = document.body.dataset.root || "";
 const money = amount => `₹${amount}`;
 const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -149,6 +153,31 @@ function renderBill() {
     const cart = getCart();
     const entries = Object.entries(cart);
     if (!entries.length) {
+        const receipt = JSON.parse(localStorage.getItem(RECEIPT_KEY) || "null");
+        if (receipt) {
+            const receiptNode = document.createElement("section");
+            receiptNode.className = "bill receipt";
+            const title = document.createElement("h2");
+            title.textContent = `Receipt for order #${receipt.order_id}`;
+            const date = document.createElement("p");
+            date.textContent = `Placed ${new Date(receipt.placed_at).toLocaleString()}`;
+            receiptNode.append(title, date);
+            receipt.items.forEach(item => {
+                const row = document.createElement("div");
+                row.className = "bill-row";
+                const name = document.createElement("span"); name.textContent = item.name;
+                const quantity = document.createElement("span"); quantity.textContent = `× ${item.quantity}`;
+                const amount = document.createElement("strong"); amount.textContent = money(item.line_total);
+                row.append(name, quantity, amount);
+                receiptNode.append(row);
+            });
+            const total = document.createElement("p");
+            total.className = "bill-total";
+            total.textContent = `Total paid: ${money(receipt.total)}`;
+            receiptNode.append(total);
+            target.append(receiptNode);
+            return;
+        }
         const empty = document.createElement("p");
         empty.className = "empty-state";
         empty.textContent = "Your cart is empty. Browse the menu to add something!";
@@ -189,12 +218,26 @@ function renderBill() {
                     items: entries.map(([id, item]) => ({ menu_item_id: Number(id), quantity: item.qty }))
                 })
             });
-            window.alert(`Order placed. Server total: ${money(order.total)}`);
+            localStorage.setItem(RECEIPT_KEY, JSON.stringify({
+                ...order,
+                placed_at: new Date().toISOString()
+            }));
             localStorage.removeItem(CART_KEY);
             renderBill();
-            document.getElementById("order-message").textContent = `Order placed. Total: ${money(order.total)}`;
+            document.getElementById("order-message")?.remove();
             updateCartCount();
         } catch (error) {
+            const staleItem = error.status === 400 && error.message.match(/Menu item id (\d+) was not found\./);
+            if (staleItem && getCart()[staleItem[1]]) {
+                const updatedCart = getCart();
+                delete updatedCart[staleItem[1]];
+                saveCart(updatedCart);
+                renderBill();
+                const currentMessage = document.getElementById("order-message");
+                if (currentMessage) currentMessage.textContent = `An unavailable menu item was removed from your cart. Review the updated order and try again.`;
+                updateCartCount();
+                return;
+            }
             message.textContent = error.message;
             placeOrder.disabled = false;
         }
@@ -230,9 +273,14 @@ function initializeRating() {
     const stars = [...document.querySelectorAll(".star")];
     if (!stars.length) return;
     let rating = 0;
+    stars.forEach(star => star.setAttribute("aria-pressed", "false"));
     stars.forEach(star => star.addEventListener("click", () => {
         rating = Number(star.dataset.rating);
-        stars.forEach(item => { item.textContent = Number(item.dataset.rating) <= rating ? "★" : "☆"; });
+        stars.forEach(item => {
+            const selected = Number(item.dataset.rating) === rating;
+            item.setAttribute("aria-pressed", String(selected));
+            item.textContent = Number(item.dataset.rating) <= rating ? "★" : "☆";
+        });
     }));
     document.getElementById("submit-rating")?.addEventListener("click", async () => {
         const message = document.getElementById("rating-message");
@@ -243,7 +291,7 @@ function initializeRating() {
         try {
             const result = await api("/ratings", {
                 method: "POST",
-                body: JSON.stringify({ stars: rating, comment: null })
+                body: JSON.stringify({ stars: rating, comment: document.getElementById("rating-comment").value })
             });
             message.textContent = `${result.message} Thank you for visiting!`;
             document.getElementById("submit-rating").disabled = true;
@@ -265,6 +313,10 @@ function initializeExitLinks() {
 
 function initializePage() {
     const activePage = { items: "menu.html", books: "books.html", orders: "bill.html", about: "about.html" }[document.body.dataset.page];
+    if (activePage && !localStorage.getItem(SESSION_TOKEN_KEY)) {
+        window.location.replace(`${ROOT}index.html`);
+        return;
+    }
     if (activePage) {
         document.querySelectorAll(".navigation .nav-link").forEach(link => {
             link.classList.toggle("active", link.getAttribute("href") === activePage);
