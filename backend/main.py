@@ -67,7 +67,7 @@ class BookResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    name: str  = Field(max_length=100)
+    name: str = Field(max_length=100)
     phone: str
 
 

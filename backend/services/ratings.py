@@ -38,9 +38,29 @@ def save_rating(
     if customer is None:
         raise RatingCustomerNotFound(customer_id)
 
-    connection.execute(
-        "INSERT INTO ratings (customer_id, stars, comment) VALUES (?, ?, ?)",
-        (customer_id, stars, cleaned_comment),
-    )
-    connection.commit()
+    # Serialize this check and insert so simultaneous submissions cannot both pass.
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        customer = connection.execute(
+            "SELECT id FROM customers WHERE id = ?",
+            (customer_id,),
+        ).fetchone()
+        if customer is None:
+            raise RatingCustomerNotFound(customer_id)
+
+        existing = connection.execute(
+            "SELECT 1 FROM ratings WHERE customer_id = ? AND date(created_at) = date('now') LIMIT 1",
+            (customer_id,),
+        ).fetchone()
+        if existing is not None:
+            raise InvalidRating("You can submit only one rating per UTC day.")
+
+        connection.execute(
+            "INSERT INTO ratings (customer_id, stars, comment) VALUES (?, ?, ?)",
+            (customer_id, stars, cleaned_comment),
+        )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
     return "Rating submitted successfully."
