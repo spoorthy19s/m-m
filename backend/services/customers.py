@@ -31,7 +31,7 @@ def upsert_customer(
         """
         INSERT INTO customers (name, phone)
         VALUES (?, ?)
-        ON CONFLICT(phone) DO UPDATE SET name = excluded.name
+        ON CONFLICT(phone) DO NOTHING
         """,
         (name, phone),
     )

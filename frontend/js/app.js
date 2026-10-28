@@ -40,6 +40,7 @@ async function api(path, options = {}) {
 function clearSession() {
     localStorage.removeItem(SESSION_TOKEN_KEY);
     localStorage.removeItem(CUSTOMER_NAME_KEY);
+    localStorage.removeItem(CART_KEY);
 }
 
 const CART_KEY = "margins-and-mugs-cart-v2";
