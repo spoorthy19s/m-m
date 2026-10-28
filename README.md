@@ -1,65 +1,85 @@
+# Margins & Mugs
 
-# ☕📚 Margins & Mugs
+A small full-stack café and book catalogue application. Customers can log in with a name and phone number, browse the menu and books, build a cart, place orders, and leave a rating with an optional comment.
 
-A full-stack web café management system that combines the joy of coffee with the love of books. Browse the menu, discover books, place orders, and get AI-powered recommendations.
+The project began as a Tkinter application and now includes a FastAPI web backend with a static HTML, CSS, and JavaScript frontend.
 
-> Originally built as a Python Tkinter desktop mini project, now rebuilt as a web application with AI features.
+## Features
 
----
+- Customer login using a name and phone number
+- Menu and book catalogues
+- Cart, bill calculation, and order placement
+- A receipt retained on the bill page after checkout
+- A star rating with an optional comment (up to 500 characters)
+- One rating per customer per UTC calendar day
 
-## ✨ Features
+AI, forecasting, sentiment analysis, admin pages, notebooks, generated data, and automated tests are not currently implemented; the related placeholder files or directories are not presented as completed features.
 
-- **Login** with name and phone number validation
-- **Menu** with hot beverages, desserts & bakes, and snacks
-- **Books available** in the café: general fiction, non-fiction, thrillers
-- **Cart and billing** with quantity controls and automatic total calculation
-- **Order placement** saved to the database
-- **Rating system** (1–5 stars) on exit
-- **AI chatbot** that answers questions about the menu and books
-- **AI recommendations** that pair a book with your order, plus mood-based picks
-- **Admin dashboard** with orders, top sellers, revenue, and an AI summary of ratings
+## Tech stack
 
----
+- Python 3.14
+- FastAPI and Uvicorn
+- SQLite
+- HTML, CSS, and JavaScript
+- pandas, scikit-learn, and joblib for the machine-learning work in progress
+- Groq SDK for planned LLM integration
 
-## 🛠️ Tech Stack
+## Project structure
 
-| Layer | Technology |
-|---|---|
-| Frontend | HTML, CSS, JavaScript |
-| Backend | Python, FastAPI |
-| Database | SQLite |
-| AI | LLM API (GROQ) |
-| Charts | Chart.js |
-| Deployment | Render |
-
----
-
-## 📁 Project Structure
-
-```
-margins-and-mugs/
+```text
+m-m-main/
 ├── backend/
-│   ├── main.py            # Flask app and API routes
-│   ├── database.py        # SQLite connection helpers
-│   ├── schema.sql         # Database table definitions
-│   ├── seed.py            # Loads the menu into the database
-│   ├── ai.py              # Connects API endpoints to the ML modules
-│   ├── ml/
-│   │   ├── forecast.py    # Demand forecasting
-│   │   ├── recommender.py # Item recommendations
-│   │   └── sentiment.py   # Review sentiment classifier
-│   └── models/            # Saved trained models (.joblib)
+│   ├── __init__.py
+│   ├── main.py                    # FastAPI application and API routes
+│   ├── ai.py                      # Reserved for AI integration
+│   ├── database/
+│   │   ├── __init__.py
+│   │   ├── database.py            # SQLite connection and request dependency
+│   │   ├── schema.sql             # Database table definitions
+│   │   └── seed.py                # Initial catalogue data
+│   ├── services/
+│   │   ├── auth.py
+│   │   ├── catalog.py
+│   │   ├── customers.py
+│   │   ├── orders.py
+│   │   └── ratings.py
+│   └── ml/
+│       ├── forecast.py
+│       ├── recommender.py
+│       └── sentiment.py
 ├── frontend/
-│   ├── index.html         # Landing page and best sellers
-│   ├── html/              # Menu, cart/bill, admin, books, about pages
-│   ├── css/style.css      # Styling
-│   └── js/                # Page scripts and API helper
-├── data/                  # Dataset generator and generated orders
-├── notebooks/             # EDA and model experiments
-├── tests/                 # Automated tests
-├── docs/                  # Screenshots, architecture diagram, demo GIF
-├── legacy_tkinter/        # Original Tkinter version
+│   ├── index.html                 # Customer login page
+│   ├── html/
+│   │   ├── about.html
+│   │   ├── bill.html
+│   │   ├── books.html
+│   │   └── menu.html
+│   ├── css/style.css
+│   └── js/app.js
+├── legacy_tkinter/                # Original desktop project
+├── .env.example
 ├── requirements.txt
 └── README.md
 ```
 
+## Setup
+
+Use Python 3.14 and install the pinned dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Copy `.env.example` to `.env`, set a stable `SESSION_SECRET`, then start the application from the project root:
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+Open <http://127.0.0.1:8000> in a browser. For deployment, set the same `SESSION_SECRET` in the hosting provider's environment settings. Generate a value with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Keep `.env` private; it is ignored by Git.
