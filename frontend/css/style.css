@@ -24,7 +24,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
     font: inherit;
 }
 
@@ -318,6 +319,26 @@ a {
 
 .rating-card .button {
     min-width: 180px;
+}
+
+.rating-card label {
+    display: block;
+    margin-top: 18px;
+    text-align: left;
+    font-weight: 700;
+}
+
+.rating-card textarea {
+    display: block;
+    width: 100%;
+    min-height: 100px;
+    margin: 8px 0 16px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    background: var(--bg);
+    resize: vertical;
 }
 
 .page-header+#books-content {
