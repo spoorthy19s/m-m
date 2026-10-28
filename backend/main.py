@@ -67,7 +67,7 @@ class BookResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    name: str
+    name: str  = Field(max_length=100)
     phone: str
 
 
@@ -106,7 +106,7 @@ class OrderResponse(BaseModel):
 
 class RatingRequest(BaseModel):
     stars: int = Field(strict=True, ge=1, le=5)
-    comment: str | None = None
+    comment: str | None = Field(default=None, max_length=500)
 
     model_config = ConfigDict(extra="forbid")
 
