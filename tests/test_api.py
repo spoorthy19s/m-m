@@ -14,34 +14,25 @@ from backend.services import auth
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, tmp_path):
     """Run the API lifespan against a fresh per-test SQLite database."""
-    file_descriptor, file_path = tempfile.mkstemp(
-        prefix="cafe-test-",
-        suffix=".sqlite3",
-        dir=Path(__file__).parent,
-    )
-    os.close(file_descriptor)
-    db_path = Path(file_path)
+    db_path = tmp_path / "cafe-test.sqlite3"
     monkeypatch.setenv("CAFE_DB_PATH", str(db_path))
     # DB_PATH is read at module import, so update it after setting the env var.
     monkeypatch.setattr(database, "DB_PATH", db_path)
-    try:
-        with TestClient(main.app) as test_client:
-            yield test_client
-    finally:
-        db_path.unlink(missing_ok=True)
+    with TestClient(main.app) as test_client:
+        yield test_client
 
 
 @pytest.fixture
-def client(monkeypatch, tmp_path):
-       """Run the API lifespan against a fresh per-test SQLite database."""
-       db_path = tmp_path / "cafe-test.sqlite3"
-       monkeypatch.setenv("CAFE_DB_PATH", str(db_path))
-       # DB_PATH is read at module import, so update it after setting the env var.
-       monkeypatch.setattr(database, "DB_PATH", db_path)
-       with TestClient(main.app) as test_client:
-           yield test_client
+def customer_headers(client):
+    """Log in a test customer and return their bearer-token headers."""
+    response = client.post(
+        "/api/login",
+        json={"name": "Test Customer", "phone": "9876543210"},
+    )
+    assert response.status_code == 200
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
 
 def test_order_uses_database_price(client, customer_headers):
