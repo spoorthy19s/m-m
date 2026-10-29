@@ -3,10 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-import os
-import tempfile
 import time
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -37,13 +34,14 @@ def client(monkeypatch):
 
 
 @pytest.fixture
-def customer_headers(client):
-    response = client.post(
-        "/api/login",
-        json={"name": "Test Customer", "phone": "5551234567"},
-    )
-    assert response.status_code == 200
-    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+def client(monkeypatch, tmp_path):
+       """Run the API lifespan against a fresh per-test SQLite database."""
+       db_path = tmp_path / "cafe-test.sqlite3"
+       monkeypatch.setenv("CAFE_DB_PATH", str(db_path))
+       # DB_PATH is read at module import, so update it after setting the env var.
+       monkeypatch.setattr(database, "DB_PATH", db_path)
+       with TestClient(main.app) as test_client:
+           yield test_client
 
 
 def test_order_uses_database_price(client, customer_headers):
